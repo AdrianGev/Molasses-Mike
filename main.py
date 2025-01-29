@@ -2,6 +2,7 @@ import pygame
 import sys
 from player import draw_player
 from collisions import check_collision
+from specialmoves import RollState, handle_roll
 
 pygame.init()
 
@@ -10,6 +11,7 @@ SCREEN_WIDTH = 1400
 SCREEN_HEIGHT = 600
 RED = (255, 0, 0)
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 INITIAL_JUMP_FORCE = -15
 GRAVITY = 0.8
 PLAYER_SPEED = 5
@@ -39,6 +41,9 @@ player_velocity_y = 0  # Player vertical velocity (for gravity)
 on_ground = False  # Whether the player is standing on a platform
 ground_level = SCREEN_HEIGHT - 80
 
+# Initialize roll state
+roll_state = RollState()
+
 # Platform data (x, y, width, height)
 platforms = [
     pygame.Rect(100, SCREEN_HEIGHT - 50, 50, 50),  # First platform
@@ -50,7 +55,7 @@ platforms = [
 # Main game loop
 run = True
 while run:
-    screen.fill((255, 255, 255))  # Fill screen with white background
+    screen.fill(WHITE)  # Fill screen with white background
 
     # Draw platforms
     for platform in platforms:
@@ -78,19 +83,23 @@ while run:
         jump_force = 0
 
     # Horizontal movement
-    if keys[pygame.K_a]:  # Move left
+    if keys[pygame.K_LEFT]:  # Move left
         move_x = -PLAYER_SPEED
         is_walking_left = True
-    elif keys[pygame.K_d]:  # Move right
+    elif keys[pygame.K_RIGHT]:  # Move right
         move_x = PLAYER_SPEED
         is_walking_right = True
+
+    # Handle rolling
+    roll_velocity = handle_roll(keys, roll_state, is_walking_left, is_walking_right)
+    move_x += roll_velocity
 
     # Check horizontal collision
     if check_collision(player_x, player_y, player_width, player_height, move_x, 0, screen):
         player_x += move_x
 
     # Jumping
-    if keys[pygame.K_SPACE] and on_ground:  # Jump
+    if keys[pygame.K_UP] and on_ground:  # Jump
         jump_force = INITIAL_JUMP_FORCE
         is_jumping = True
         on_ground = False
@@ -123,7 +132,7 @@ while run:
         on_ground = True
 
     # Draw the player
-    draw_player(screen, player_x, player_y, player_height, walk_angle, is_walking_left, player_width, time, is_walking_right, on_ground)
+    draw_player(screen, player_x, player_y, player_height, walk_angle, is_walking_left, player_width, time, is_walking_right, on_ground, roll_state)
 
     time += 1   # Increment time for walking cycle
 
